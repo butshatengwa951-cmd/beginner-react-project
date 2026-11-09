@@ -4,7 +4,7 @@ Firebase Authentication manages identity. It answers: "Who is signed in?" It doe
 
 ## 1. Create a Firebase project
 
-1. Open the Firebase console: https://console.firebase.google.com/
+1. Open the Firebase console.
 2. Create a project for this practice application.
 3. Add a Web app to the project.
 4. Register the app and copy its web configuration.
@@ -19,21 +19,30 @@ VITE_FIREBASE_PROJECT_ID=...
 VITE_FIREBASE_APP_ID=...
 ~~~
 
-Restart the Vite server after changing environment variables. Vite reads env files when the dev server starts.
+Restart Vite after changing environment variables. Vite reads env files when the dev server starts.
 
-The Firebase web config is intended to identify the browser app. It is not a service-account private key. Security must be enforced by Firebase rules and, in this project, by verifying ID tokens on the server.
+The Firebase web config identifies the browser app. It is not a service-account private key. Never put Admin SDK private keys into VITE_ variables: anything exposed to Vite client code can be inspected by users in the browser.
 
-## 2. Firebase client SDK
+## 2. Configure Firebase Admin on the server
 
-Open client/src/services/firebase.js.
+The server needs a trusted service-account credential so Firebase Admin can verify ID tokens.
 
-- initializeApp(config) creates the Firebase app instance.
-- getAuth(app) gives the app's Authentication instance.
-- import.meta.env reads Vite environment variables.
-- The VITE_ prefix is required for values that browser code needs.
-- The module checks for missing settings so the UI can still load while you study before configuring Firebase.
+1. In Firebase Console, open Project settings → Service accounts.
+2. Generate a new private key and download the JSON file.
+3. Create server/credentials if it does not exist.
+4. Move the downloaded JSON into that folder and rename it service-account.json.
 
-Never place Firebase Admin credentials or Google service-account private keys in a VITE_ variable. Anything exposed to Vite client code can be inspected by users in the browser.
+The resulting path should be:
+
+~~~text
+server/credentials/service-account.json
+~~~
+
+The file is deliberately ignored by Git. Keep it local and private. Do not commit it, upload it to GitHub, or paste the private key into chat.
+
+The server loads the original JSON file directly using cert(serviceAccount). This avoids manual copy/paste errors and broken PEM newlines. The relevant code is:
+- server/src/config/serviceAccount.js — reads and parses the JSON file.
+- server/src/config/firebaseAdmin.js — passes the parsed service account to Firebase Admin.
 
 ## 3. Register and sign in
 
@@ -74,10 +83,10 @@ The backend uses Firebase Admin's verifyIdToken() to validate the token. Do not 
 
 ## 7. Try it
 
-After setting client/.env:
-1. Restart the Vite development server.
+After setting client/.env and placing the service-account JSON in server/credentials:
+1. Restart the Vite and Express development servers.
 2. Register an account with an email and password.
 3. Refresh the dashboard. The authentication observer should restore the session.
 4. Sign out, then sign in again.
 
-The task endpoints will not work until the backend credentials and Google Sheet are configured too. That is expected; auth and data storage are separate steps.
+The task endpoints also need the Google Sheets API enabled and the spreadsheet shared with the service account. That is a separate step from Firebase Authentication.
