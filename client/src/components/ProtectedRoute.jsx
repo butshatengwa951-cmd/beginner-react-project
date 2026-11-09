@@ -1,0 +1,13 @@
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
+
+export default function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <main className="screen-message">Checking your session…</main>;
+  }
+
+  // This controls the frontend route only. The API must still verify the token.
+  return user ? children : <Navigate to="/login" replace />;
+}
