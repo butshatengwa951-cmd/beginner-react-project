@@ -8,8 +8,6 @@ import {
 } from "../services/googleSheets.js";
 
 const router = Router();
-
-// Apply authentication before every endpoint in this router.
 router.use(requireAuth);
 
 router.get("/", async (request, response, next) => {
@@ -23,9 +21,8 @@ router.get("/", async (request, response, next) => {
 
 router.post("/", async (request, response, next) => {
   try {
-    const title = typeof request.body.title === "string"
-      ? request.body.title.trim()
-      : "";
+    const body = request.body || {};
+    const title = typeof body.title === "string" ? body.title.trim() : "";
 
     if (!title || title.length > 120) {
       return response.status(400).json({
@@ -35,8 +32,8 @@ router.post("/", async (request, response, next) => {
 
     const task = await createTask(request.user.uid, {
       title,
-      category: cleanText(request.body.category, 40) || "Other",
-      dueDate: cleanText(request.body.dueDate, 10),
+      category: cleanText(body.category, 40) || "Other",
+      dueDate: cleanText(body.dueDate, 10),
     });
 
     response.status(201).json({ task });
@@ -47,28 +44,29 @@ router.post("/", async (request, response, next) => {
 
 router.patch("/:id", async (request, response, next) => {
   try {
+    const body = request.body || {};
     const allowedStatuses = ["Not started", "In progress", "Completed"];
     const changes = {};
 
-    if (typeof request.body.title === "string") {
-      const title = request.body.title.trim();
+    if (typeof body.title === "string") {
+      const title = body.title.trim();
       if (!title || title.length > 120) {
         return response.status(400).json({ message: "Invalid task title." });
       }
       changes.title = title;
     }
 
-    if (typeof request.body.category === "string") {
-      changes.category = cleanText(request.body.category, 40);
+    if (typeof body.category === "string") {
+      changes.category = cleanText(body.category, 40);
     }
-    if (typeof request.body.dueDate === "string") {
-      changes.dueDate = cleanText(request.body.dueDate, 10);
+    if (typeof body.dueDate === "string") {
+      changes.dueDate = cleanText(body.dueDate, 10);
     }
-    if (typeof request.body.status === "string") {
-      if (!allowedStatuses.includes(request.body.status)) {
+    if (typeof body.status === "string") {
+      if (!allowedStatuses.includes(body.status)) {
         return response.status(400).json({ message: "Invalid task status." });
       }
-      changes.status = request.body.status;
+      changes.status = body.status;
     }
 
     if (Object.keys(changes).length === 0) {
