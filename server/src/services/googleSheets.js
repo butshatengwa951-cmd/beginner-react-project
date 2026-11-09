@@ -1,20 +1,28 @@
 import { google } from "googleapis";
 import { randomUUID } from "node:crypto";
+import { loadServiceAccount } from "../config/serviceAccount.js";
 
 const SHEET_RANGE = "Tasks!A:G";
 
 function getSheetsClient() {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const rawPrivateKey = process.env.GOOGLE_PRIVATE_KEY;
 
-  if (!spreadsheetId || !clientEmail || !rawPrivateKey) {
-    throw new Error("Google Sheets settings are missing from server/.env.");
+  if (!spreadsheetId) {
+    throw new Error("GOOGLE_SHEETS_SPREADSHEET_ID is missing from server/.env.");
   }
 
-  const privateKey = rawPrivateKey.replace(/\\n/g, "\n");
+  // You can point this at a separate service-account file if preferred.
+  // By default it uses the same JSON key as Firebase Admin.
+  const serviceAccount = loadServiceAccount(
+    process.env.GOOGLE_SERVICE_ACCOUNT_PATH ||
+    process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+  );
+
   const auth = new google.auth.GoogleAuth({
-    credentials: { client_email: clientEmail, private_key: privateKey },
+    credentials: {
+      client_email: serviceAccount.client_email,
+      private_key: serviceAccount.private_key,
+    },
     scopes: ["https://www.googleapis.com/auth/spreadsheets"],
   });
 
