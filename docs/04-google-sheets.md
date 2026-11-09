@@ -22,35 +22,30 @@ Keep the column order stable because the service maps each array position to a p
 
 ## 2. Enable the Google Sheets API
 
-1. Open Google Cloud Console: https://console.cloud.google.com/
-2. Select or create a Google Cloud project.
+1. Open Google Cloud Console.
+2. Select the same Google Cloud project that owns your Firebase service account.
 3. Open APIs & Services → Library.
 4. Search for Google Sheets API and enable it.
-5. Create a service account under IAM & Admin → Service Accounts.
-6. Create a key for that service account and store it securely.
 
-Google Cloud's interface may change over time; follow the current console labels if a menu has moved.
+## 3. Use the service-account JSON
 
-## 3. Share the spreadsheet
+The project can use the same JSON key for Firebase Admin and Google Sheets:
 
-Copy the service account email address. It looks like an email address ending in iam.gserviceaccount.com.
+~~~text
+server/credentials/service-account.json
+~~~
 
-Open the spreadsheet's Share dialog and give that email Editor access. The API can only edit a spreadsheet that the service account has permission to access.
+Download it from Firebase Console → Project settings → Service accounts → Generate new private key. Keep it local and private; never commit it or share its private key.
+
+The code reads client_email and private_key directly from this JSON file. This avoids manually copying the PEM private key into server/.env.
+
+If you prefer a separate service account for Sheets, create one in Google Cloud IAM & Admin → Service Accounts, grant it the required access, download its JSON key into server/credentials, then set GOOGLE_SERVICE_ACCOUNT_PATH in server/.env to that file's path.
+
+## 4. Share the spreadsheet
+
+Copy the client_email value from the service-account JSON. Open your spreadsheet's Share dialog and give that email Editor access. The API can only edit a spreadsheet that the service account has permission to access.
 
 The spreadsheet ID is the long value between /d/ and /edit in the spreadsheet URL. Put it in server/.env as GOOGLE_SHEETS_SPREADSHEET_ID.
-
-## 4. Configure server credentials
-
-The server uses:
-- GOOGLE_SERVICE_ACCOUNT_EMAIL
-- GOOGLE_PRIVATE_KEY
-- GOOGLE_SHEETS_SPREADSHEET_ID
-
-The Firebase Admin setup uses a separate set of environment variable names. You may use one service account for both roles if it is configured with the required project permissions and spreadsheet access; otherwise use separate service accounts.
-
-For the private key in .env, keep it as one quoted value with newline characters represented as \n. The server replaces those escaped newline sequences before creating the Google API client.
-
-Do not put these credentials in client/.env. Do not prefix them with VITE_. Never commit server/.env or a downloaded service-account key.
 
 ## 5. How the code maps rows to objects
 
