@@ -11,15 +11,23 @@ export async function requireAuth(request, response, next) {
 
   const idToken = authorization.slice("Bearer ".length);
 
+  // Treat a server configuration problem differently from an invalid user token.
+  let firebaseAuth;
+  try {
+    firebaseAuth = getFirebaseAdminAuth();
+  } catch (configurationError) {
+    return next(configurationError);
+  }
+
   try {
     // verifyIdToken validates the token before we trust its UID.
-    const decodedToken = await getFirebaseAdminAuth().verifyIdToken(idToken);
+    const decodedToken = await firebaseAuth.verifyIdToken(idToken);
     request.user = {
       uid: decodedToken.uid,
       email: decodedToken.email || null,
     };
     return next();
-  } catch (error) {
+  } catch (tokenError) {
     return response.status(401).json({
       message: "Your session is invalid or has expired. Please sign in again.",
     });
