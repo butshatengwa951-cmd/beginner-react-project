@@ -27,7 +27,6 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
 
-    // Unsubscribe when the provider unmounts.
     return unsubscribe;
   }, []);
 
@@ -35,7 +34,9 @@ export function AuthProvider({ children }) {
     if (!isFirebaseConfigured) {
       throw new Error("Add your Firebase web-app settings to client/.env first.");
     }
+
     const result = await createUserWithEmailAndPassword(auth, email, password);
+    setUser(result.user);
     return result.user;
   }
 
@@ -43,13 +44,16 @@ export function AuthProvider({ children }) {
     if (!isFirebaseConfigured) {
       throw new Error("Add your Firebase web-app settings to client/.env first.");
     }
+
     const result = await signInWithEmailAndPassword(auth, email, password);
+    setUser(result.user);
     return result.user;
   }
 
   async function logout() {
     if (auth) {
       await signOut(auth);
+      setUser(null);
     }
   }
 
@@ -58,7 +62,7 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// A custom hook keeps the context access consistent in pages and components.
+// A custom hook keeps context access consistent in pages and components.
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
